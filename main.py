@@ -11,12 +11,12 @@ import ffmpeg
 
 '''PARÂMETROS DE CONEXÃO DB '''
 
-DB_USER=''
-DB_PASSWORD=''
-DB_HOST=''
-DB_NAME=''
+DB_USER='u176003588_tr'
+DB_PASSWORD='?bE4q>1~>e'
+DB_HOST='154.56.48.52'
+DB_NAME='u176003588_tr'
 
-DB_URL=""
+DB_URL="mysql://u176003588_tr:?bE4q>1~>e@154.56.48.52/u176003588_tr"
 
 
 class Connect(object):
