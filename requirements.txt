@@ -1,5 +1,5 @@
 mysql-connector-python
 openai-whisper
-python-crontab
-schedule
+#python-crontab
+#schedule
 ffmpeg-python==0.2.0
