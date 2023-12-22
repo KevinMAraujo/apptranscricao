@@ -4,6 +4,7 @@ from mysql.connector import Error
 from mysql.connector import errorcode
 from datetime import datetime
 from datetime import timedelta
+from decouple import config
 
 import whisper
 import ffmpeg
@@ -11,12 +12,12 @@ import ffmpeg
 
 '''PARÂMETROS DE CONEXÃO DB '''
 
-DB_USER='u176003588_tr'
-DB_PASSWORD='?bE4q>1~>e'
-DB_HOST='154.56.48.52'
-DB_NAME='u176003588_tr'
+DB_USER = config('DB_USER')
+DB_PASSWORD = config('DB_PASSWORD')
+DB_HOST = config('DB_HOST')
+DB_NAME = config('DB_NAME')
 
-DB_URL="mysql://u176003588_tr:?bE4q>1~>e@154.56.48.52/u176003588_tr"
+DB_URL=config('DB_URL')
 
 
 class Connect(object):
@@ -97,6 +98,7 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
     if out == "default":
         # ----
         ret = ""
+        lista_text = []  # id, time_inicio, time_fim, texto
         for seg in result['segments']:
             td_s = timedelta(milliseconds=seg["start"] * 1000)
             td_e = timedelta(milliseconds=seg["end"] * 1000)
@@ -104,14 +106,23 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
             t_s = f'{td_s.seconds // 3600:02}:{(td_s.seconds // 60) % 60:02}:{td_s.seconds % 60:02}.{td_s.microseconds // 1000:03}'
             t_e = f'{td_e.seconds // 3600:02}:{(td_e.seconds // 60) % 60:02}:{td_e.seconds % 60:02}.{td_e.microseconds // 1000:03}'
 
-            ret += '{}\n{} --> {}\n{}\n\n'.format(seg["id"], t_s, t_e, seg["text"])
-        ret += '\n'
+            ret += '{}\n{} --> {}\n{}|\n\n'.format(seg["id"], t_s, t_e, seg["text"])
+            #lista_text.append([seg["id"], t_s, t_e, seg["text"]])
+        #ret += '\n'
         return {"text": ret}
         # -----
+        #return lista_text
     elif out == "text":
         return {"text": result['text']}
+        #return [result['text']]
     else:
+        '''max_end = '00:00:00'
+        if len(result['segments']) > 0:
+            len_seg = len(result['segments']) - 1
+            max_end = result['segments'][len_seg]['end']
+            min_end = result['segments'][0]['start']'''
         return {"text": result['text']}
+        #return [result['text']]
 
 '''def download_file(filepath: str):
     with open(filepath, 'r') as file:
@@ -137,7 +148,7 @@ if __name__ == '__main__':
         print("full_filepath: ", full_filepath)
         model = 'base'
         print('Iniciando transcrição....')
-        result = transcribe_file(filepath=full_filepath, model_type=model, out='text')
+        result = transcribe_file(filepath=full_filepath, model_type=model)
         print('Inserindo transcrição na base de dados')
         #print("Result: ", result['text'])
         conexao_db.insert_transcription(file_id, user_id, name, result['text'], model)
