@@ -75,12 +75,12 @@ class Connect(object):
             cursor = self.cursor
             #sql = "SELECT file_id,filename, user_id, file_path, upload_date FROM files WHERE file_id = ?"
             #sql = "SELECT id as file_id, user_id, display_name, file_path, file_name, status, created_at, updated_at FROM files WHERE id = %s"
-            sql = "SELECT * FROM files f  "
-            sql += "WHERE NOT EXISTS (SELECT t.file_id	FROM transcriptions t WHERE t.file_id = f.id LIMIT 1)"
-            sql += "LIMIT 2"
+            #sql += "LIMIT 2"
+            #cursor.execute(sql)
+            sql = "SELECT * FROM files f WHERE status = {} LIMIT 2".format(status)
 
-            print('Aqui')
             cursor.execute(sql)
+
             #cursor.execute(f"SELECT id as file_id, user_id, display_name, file_path, file_name, status, created_at, updated_at FROM files WHERE status =1")
 
             file = cursor.fetchall()
@@ -88,7 +88,29 @@ class Connect(object):
 
         except Exception as er:
             print(f"Error: {er}")
-            return None
+            return []
+    def update_file_status(self, file_id, status):
+        try:
+            created_date = datetime.now().date()
+            conn = self.bd_connection()
+            cursor = conn.cursor(buffered=True)
+            '''sql = "UDPATE files f  "
+            sql += " set status like {}".format(status)
+            sql += "WHERE id = {}".format(file_id) 
+            cursor.execute(sql)'''
+
+            sql = "UPDATE files SET status = %s WHERE id = %s"
+            values = (status, file_id)
+            cursor.execute(sql, values)
+            cursor = self.cursor
+            print(cursor.rowcount, " registros atualizados.\n")
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as er:
+            print(f"Erro ao realizar atualização na tabela files: {er}")
+            return False
+
 
 def transcribe_file(filepath: str, model_type="base", out="default", language='pt'):
 
@@ -136,7 +158,7 @@ if __name__ == '__main__':
 
     conexao_db = Connect()
 
-    files = conexao_db.select_file_by_status(status='%')
+    files = conexao_db.select_file_by_status(status=1)
 
     for file in files:
         print(file)
@@ -144,20 +166,27 @@ if __name__ == '__main__':
         user_id = file[1]
         name = file[2]
 
-
         full_filepath = file[4]+'/'+file[5]
+
         print("full_filepath: ", full_filepath)
         model = 'base'
         print('Iniciando transcrição....')
-        result = transcribe_file(filepath=full_filepath, model_type=model)
-        print('Inserindo transcrição na base de dados')
-        #print("Result: ", result['text'])
-        conexao_db.insert_transcription(file_id, user_id, name, result['text'], model)
-        print('Transcrição do inserida')
-        print(f'file_id: {file_id}')
-        print(f'user_id: {user_id}')
-        print(f'name: {name}')
-        print(f'full_filepath: {full_filepath}')
+        if conexao_db.update_file_status(file_id, 2):
+            result = transcribe_file(filepath=full_filepath, model_type=model)
+            print('Inserindo transcrição na base de dados')
+            conexao_db.insert_transcription(file_id, user_id, name, result['text'], model)
+            print('Transcrição do inserida')
+            print(f'file_id: {file_id}')
+            print(f'user_id: {user_id}')
+            print(f'name: {name}')
+            print(f'full_filepath: {full_filepath}')
+            if conexao_db.update_file_status(file_id, 3):
+                print('Processo finalizado')
+            else:
+                print("A transcrição foi inserida, mas não foi possível atualizar o status da tabela files.")
+        else:
+            print("Não foi possível iniciar a transcrição")
+
 
 
 
