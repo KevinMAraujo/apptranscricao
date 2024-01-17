@@ -47,7 +47,7 @@ class Connect(object):
             else:
                 print(f"Error: {er.msg}")
 
-    def insert_transcription(self, file_id, user_id, name, transcription_text, model):
+    def insert_transcription(self, file_id, user_id, name, transcription_text,transcription_detailed, model):
         try:
             created_date = datetime.now().date()
 
@@ -55,8 +55,8 @@ class Connect(object):
             #cursor = self.connection.execute('set max_allowed_packet=67108864')
             #cursor = self.cursor
             cursor = conn.cursor(buffered=True)
-            sql = "INSERT INTO transcriptions (file_id, user_id, text, type, created_at) VALUES (%s, %s, %s, %s, %s)"
-            values = (file_id, user_id, transcription_text, model, created_date)
+            sql = "INSERT INTO transcriptions (file_id, user_id, text, text_detailed, type, created_at) VALUES (%s, %s, %s, %s, %s, %s)"
+            values = (file_id, user_id, transcription_text, transcription_detailed, model, created_date)
             cursor.execute(sql, values)
             print("\n")
             print(cursor.rowcount, " registros inseridos.")
@@ -115,37 +115,24 @@ class Connect(object):
 def transcribe_file(filepath: str, model_type="base", out="default", language='pt'):
 
     model = whisper.load_model(model_type)
-
     result = model.transcribe(filepath)
-    if out == "default":
-        # ----
-        ret = ""
-        lista_text = []  # id, time_inicio, time_fim, texto
-        for seg in result['segments']:
-            td_s = timedelta(milliseconds=seg["start"] * 1000)
-            td_e = timedelta(milliseconds=seg["end"] * 1000)
+    ret = ""
+    lista_text = []  # id, time_inicio, time_fim, texto
+    for seg in result['segments']:
+        td_s = timedelta(milliseconds=seg["start"] * 1000)
+        td_e = timedelta(milliseconds=seg["end"] * 1000)
 
-            t_s = f'{td_s.seconds // 3600:02}:{(td_s.seconds // 60) % 60:02}:{td_s.seconds % 60:02}.{td_s.microseconds // 1000:03}'
-            t_e = f'{td_e.seconds // 3600:02}:{(td_e.seconds // 60) % 60:02}:{td_e.seconds % 60:02}.{td_e.microseconds // 1000:03}'
+        t_s = f'{td_s.seconds // 3600:02}:{(td_s.seconds // 60) % 60:02}:{td_s.seconds % 60:02}.{td_s.microseconds // 1000:03}'
+        t_e = f'{td_e.seconds // 3600:02}:{(td_e.seconds // 60) % 60:02}:{td_e.seconds % 60:02}.{td_e.microseconds // 1000:03}'
 
-            #ret += '{}\n{} --> {}\n{}|\n\n'.format(seg["id"], t_s, t_e, seg["text"])
-            ret += '{}\n'.format(seg["text"])
-            #lista_text.append([seg["id"], t_s, t_e, seg["text"]])
-        #ret += '\n'
-        return {"text": ret}
+        ret += '{}\n{} --> {}\n{}|\n\n'.format(seg["id"], t_s, t_e, seg["text"])
+        #ret += '{}\n'.format(seg["text"])
+        #lista_text.append([seg["id"], t_s, t_e, seg["text"]])
+
         # -----
         #return lista_text
-    elif out == "text":
-        return {"text": result['text']}
-        #return [result['text']]
-    else:
-        '''max_end = '00:00:00'
-        if len(result['segments']) > 0:
-            len_seg = len(result['segments']) - 1
-            max_end = result['segments'][len_seg]['end']
-            min_end = result['segments'][0]['start']'''
-        return {"text": result['text']}
-        #return [result['text']]
+    return {"text": result['text'], "text_detailed": ret}
+
 
 '''def download_file(filepath: str):
     with open(filepath, 'r') as file:
@@ -174,7 +161,7 @@ if __name__ == '__main__':
         if conexao_db.update_file_status(file_id, 2):
             result = transcribe_file(filepath=full_filepath, model_type=model)
             print('Inserindo transcrição na base de dados')
-            conexao_db.insert_transcription(file_id, user_id, name, result['text'], model)
+            conexao_db.insert_transcription(file_id, user_id, name, result['text'], result['text_detailed'], model)
             print('Transcrição do inserida')
             print(f'file_id: {file_id}')
             print(f'user_id: {user_id}')
