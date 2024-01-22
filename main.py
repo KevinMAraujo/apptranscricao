@@ -156,7 +156,7 @@ if __name__ == '__main__':
         full_filepath = file[4]+'/'+file[5]
 
         print("full_filepath: ", full_filepath)
-        model = 'base'
+        model = 'large'
         print('Iniciando transcrição....')
         if conexao_db.update_file_status(file_id, 2):
             result = transcribe_file(filepath=full_filepath, model_type=model)
@@ -176,5 +176,3 @@ if __name__ == '__main__':
 
 
 
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
