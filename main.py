@@ -1,4 +1,4 @@
-# This is a sample Python script.
+#!/usr/bin/python3
 from mysql.connector import connect
 from mysql.connector import Error
 from mysql.connector import errorcode
