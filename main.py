@@ -77,30 +77,35 @@ class Connect(object):
             #sql = "SELECT id as file_id, user_id, display_name, file_path, file_name, status, created_at, updated_at FROM files WHERE id = %s"
             #sql += "LIMIT 2"
             #cursor.execute(sql)
-            sql = "SELECT * FROM files f WHERE status = {} LIMIT 2".format(status)
+            #sql = "SELECT * FROM files f WHERE status = {} LIMIT 2".format(status)
+            sql = "SELECT id, user_id, name, display_name, file_path, file_name, status, type, transcription_start, transcription_end, created_at, updated_at FROM files f WHERE status = {} LIMIT 2".format(status)
 
             cursor.execute(sql)
 
-            #cursor.execute(f"SELECT id as file_id, user_id, display_name, file_path, file_name, status, created_at, updated_at FROM files WHERE status =1")
+            #cursor.execute(f"SELECT id as file_id, user_id, display_name, file_path, file_name, status, created_at, updated_at,  FROM files WHERE status =1")
 
-            file = cursor.fetchall()
-            return file
+            dados = cursor.fetchall()
+            return dados
 
         except Exception as er:
             print(f"Error: {er}")
             return []
     def update_file_status(self, file_id, status):
         try:
-            created_date = datetime.now().date()
+            date_now = datetime.now().date()
+
             conn = self.bd_connection()
             cursor = conn.cursor(buffered=True)
             '''sql = "UDPATE files f  "
             sql += " set status like {}".format(status)
             sql += "WHERE id = {}".format(file_id) 
             cursor.execute(sql)'''
+            if status == 3:
+                sql = "UPDATE files SET status = %s, transcription_end=%s  WHERE id = %s"
+            else:
+                sql = "UPDATE files SET status = %s, transcription_start=%s  WHERE id = %s"
 
-            sql = "UPDATE files SET status = %s WHERE id = %s"
-            values = (status, file_id)
+            values = (status, date_now, file_id)
             cursor.execute(sql, values)
             cursor = self.cursor
             print(cursor.rowcount, " registros atualizados.\n")
@@ -156,7 +161,18 @@ if __name__ == '__main__':
         full_filepath = file[4]+'/'+file[5]
 
         print("full_filepath: ", full_filepath)
-        model = 'large'
+        model = 'base'
+        if file[7] == '1':
+            model = 'tyny'
+        elif file[7] == '2':
+            model = 'base'
+        elif file[7] == '3':
+            model = 'small'
+        elif file[7] == '4':
+            model = 'medium'
+        elif file[7] == '5':
+            model = 'large'
+
         print('Iniciando transcrição....')
         if conexao_db.update_file_status(file_id, 2):
             result = transcribe_file(filepath=full_filepath, model_type=model)
