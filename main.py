@@ -122,6 +122,7 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
     model = whisper.load_model(model_type)
     result = model.transcribe(filepath)
     ret = ""
+
     lista_text = []  # id, time_inicio, time_fim, texto
     for seg in result['segments']:
         td_s = timedelta(milliseconds=seg["start"] * 1000)
@@ -130,13 +131,14 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
         t_s = f'{td_s.seconds // 3600:02}:{(td_s.seconds // 60) % 60:02}:{td_s.seconds % 60:02}.{td_s.microseconds // 1000:03}'
         t_e = f'{td_e.seconds // 3600:02}:{(td_e.seconds // 60) % 60:02}:{td_e.seconds % 60:02}.{td_e.microseconds // 1000:03}'
 
-        ret += '{}\n{} --> {}\n{}|\n\n'.format(seg["id"], t_s, t_e, seg["text"])
+        ret += '{} --> {} | {}\n'.format( t_s, t_e, seg["text"])
         #ret += '{}\n'.format(seg["text"])
         #lista_text.append([seg["id"], t_s, t_e, seg["text"]])
 
         # -----
         #return lista_text
-    return {"text": result['text'], "text_detailed": ret}
+    result_text = result['text']
+    return {"text": result_text, "text_detailed": ret}
 
 
 '''def download_file(filepath: str):
