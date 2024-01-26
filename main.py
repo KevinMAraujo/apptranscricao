@@ -78,7 +78,7 @@ class Connect(object):
             #sql += "LIMIT 2"
             #cursor.execute(sql)
             #sql = "SELECT * FROM files f WHERE status = {} LIMIT 2".format(status)
-            sql = "SELECT id, user_id, name, display_name, file_path, file_name, status, type, transcription_start, transcription_end, created_at, updated_at FROM files f WHERE status = {} LIMIT 2".format(status)
+            sql = "SELECT id, user_id, name, display_name, file_path, file_name, status, type, transcription_start, transcription_end, created_at, updated_at FROM files f WHERE status = {} LIMIT 1".format(status)
 
             cursor.execute(sql)
 
@@ -122,7 +122,7 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
     model = whisper.load_model(model_type)
     result = model.transcribe(filepath)
     ret = ""
-
+    result_text  = ''
     lista_text = []  # id, time_inicio, time_fim, texto
     for seg in result['segments']:
         td_s = timedelta(milliseconds=seg["start"] * 1000)
@@ -134,10 +134,11 @@ def transcribe_file(filepath: str, model_type="base", out="default", language='p
         ret += '{} --> {} | {}\n'.format( t_s, t_e, seg["text"])
         #ret += '{}\n'.format(seg["text"])
         #lista_text.append([seg["id"], t_s, t_e, seg["text"]])
-
+        result_text += '{}\n'.format(seg["text"])
         # -----
         #return lista_text
-    result_text = result['text']
+
+    #result_text = result['text']
     return {"text": result_text, "text_detailed": ret}
 
 
